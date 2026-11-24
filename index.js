@@ -1,11 +1,12 @@
 import express from "express";
 import dotenv from "dotenv";
+import cors from "cors";
 import pool from "./db.js";
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+// const PORT = process.env.PORT || 5000;
 
 app.use(
   cors({
@@ -13,6 +14,9 @@ app.use(
     methods: ["GET", "POST", "PUT", "DELETE"],
   }),
 );
+
+app.use(express.json());
+
 // 1. GET ALL (/api/todos)
 app.get("/api/todos", async (req, res) => {
   try {
@@ -84,61 +88,64 @@ app.post("/api/todos", async (req, res) => {
 app.put("/api/todos/:id", async (req, res) => {
   const { id } = req.params;
   const { title, description, priority, deadline, status } = req.body;
+
   try {
     const result = await pool.query(
       "UPDATE public.todo_items SET title = $1, description = $2, priority = $3, deadline = $4, status = $5 WHERE id = $6 RETURNING *",
-      [title, description, priority, deadline, status, id]
+      [title, description, priority, deadline, status, id],
     );
 
-    if(result.rowCount === 0) {
+    if (result.rowCount === 0) {
       res.status(404).json({
-        message: `To-do dengan id ${id} tidak ditemukan.`,
+        message: `Todo dengan id ${id} tidak ditemukan.`,
       });
-    } 
+    }
 
     res.status(200).json({
-      message: `To-do dengan id ${id} berhasil diperbarui.`,
+      message: `Todo dengan id ${id} berhasil diperbarui.`,
       data: result.rows[0],
     });
   } catch (error) {
     res.status(500).json({
-      message: `Gagal memperbarui to-do dengan id ${id}.`,
+      message: `Gagal memperbarui todo dengan id ${id}.`,
       errorMessage: error.message,
     });
   }
 });
-
 
 // 5. DELETE TODO
 app.delete("/api/todos/:id", async (req, res) => {
-  const { id } = req.params; 
+  const { id } = req.params;
 
   try {
-     const result = await pool.query(
+    const result = await pool.query(
       "DELETE FROM public.todo_items WHERE id = $1 RETURNING *",
-      [id]
+      [id],
     );
 
-    if(result.rowCount === 0) {
+    if (result.rowCount === 0) {
       res.status(404).json({
-        message: `To-do dengan id ${id} tidak ditemukan.`,
+        message: `Todo dengan id ${id} tidak ditemukan.`,
       });
-    } 
+    }
 
     res.status(200).json({
-      message: `To-do dengan id ${id} berhasil dihapus.`,
+      message: `Todo dengan id ${id} berhasil dihapus.`,
       data: result.rows[0],
     });
-  } catch (error){
+  } catch (error) {
     res.status(500).json({
-      message: `Gagal menghapus to-do dengan id ${id}.`,
+      message: `Gagal menghapus todo dengan id ${id}.`,
       errorMessage: error.message,
     });
   }
 });
 
-app.listen(PORT, () =>
-  console.log(
-    new Date().toLocaleTimeString() + `: Server is running on port ${PORT}`,
-  ),
-);
+// app.listen(PORT, () =>
+//   console.log(
+//     new Date().toLocaleTimeString() + `: Server is running on port ${PORT}`,
+//   ),
+// );
+
+
+export default app;
